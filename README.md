@@ -8,7 +8,7 @@ Developer-first ticket management platform bringing GitHub PRs, Jira issues, rea
 - **Runtime**: TypeScript, React 18, Tailwind CSS, React Query
 - **Database**: PostgreSQL via Prisma ORM (production) + SQLite via Prisma ORM (local testing)
 - **Auth**: NextAuth.js with GitHub OAuth + Atlassian (Jira) OAuth 2.0
-- **Realtime**: Pusher client placeholder (swap in Supabase Realtime if preferred)
+- **Realtime**: Built-in server-sent events bridge (swap in Supabase/Pusher if desired)
 - **File uploads**: Local disk storage by default (S3 ready)
 
 ## Getting Started
@@ -31,9 +31,7 @@ Developer-first ticket management platform bringing GitHub PRs, Jira issues, rea
    JIRA_CLIENT_ID="..."
    JIRA_CLIENT_SECRET="..."
    JIRA_ISSUER="https://auth.atlassian.com"
-   NEXT_PUBLIC_PUSHER_KEY="" # optional until realtime wiring is complete
-   NEXT_PUBLIC_PUSHER_CLUSTER="us3"
-   ```
+  ```
 
 3. Generate Prisma client & run migrations:
 
@@ -64,7 +62,7 @@ Developer-first ticket management platform bringing GitHub PRs, Jira issues, rea
 | Integrations | GitHub PR linking, Jira issue linking, branch-name helper |
 | Files | Drag-and-drop uploader writing to `public/uploads` and persisting in Prisma |
 | Admin settings | JSON export/import + toggle UI for field governance |
-| Realtime | Client hook for Pusher with auth route stub (ready for integration) |
+| Realtime | Server-sent events bridge protected by NextAuth session cookies |
 
 ## Repo Layout
 
@@ -91,7 +89,7 @@ prisma/
 
 ## Roadmap Ideas
 
-- Wire up Supabase/Pusher backend to broadcast ticket mutations.
+- Integrate a dedicated realtime backend (Supabase, Pusher, Ably, etc.) once ready.
 - Build collaborative comments editor with optimistic updates.
 - Add analytics dashboards (cycle time, deployment cadence, etc.).
 - Automate branch provisioning via GitHub Apps.

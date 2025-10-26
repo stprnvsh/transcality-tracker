@@ -4,6 +4,7 @@ import { TicketStatus, TicketType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { publishRealtimeEvent } from "@/lib/realtime-server";
 
 export const ticketSchema = z.object({
   type: z.nativeEnum(TicketType),
@@ -98,6 +99,15 @@ export async function createTicket(payload: TicketInput) {
 
   revalidatePath("/");
   revalidatePath("/tickets");
+  publishRealtimeEvent({
+    type: "ticket.created",
+    payload: {
+      id: ticket.id,
+      status: ticket.status,
+      priority: ticket.priority,
+      severity: ticket.severity
+    }
+  });
   return ticket;
 }
 
@@ -123,6 +133,13 @@ export async function updateTicket(id: string, payload: Partial<TicketInput>) {
 
   revalidatePath(`/tickets/${id}`);
   revalidatePath("/tickets");
+  publishRealtimeEvent({
+    type: "ticket.updated",
+    payload: {
+      id,
+      changes: data
+    }
+  });
   return updated;
 }
 
@@ -134,6 +151,10 @@ export async function deleteTicket(id: string) {
 
   await prisma.ticket.delete({ where: { id } });
   revalidatePath("/tickets");
+  publishRealtimeEvent({
+    type: "ticket.deleted",
+    payload: { id }
+  });
 }
 
 async function logHistoryChanges(before: any, after: any, userId: string) {

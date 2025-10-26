@@ -1,18 +1,48 @@
 "use client";
 
-import Pusher from "pusher-js";
+import type { RealtimeEvent } from "./realtime-server";
 
-let client: Pusher | null = null;
+type Listener = (event: RealtimeEvent) => void;
 
-export function getRealtimeClient() {
-  if (typeof window === "undefined") return null;
+let source: EventSource | null = null;
+const listeners = new Set<Listener>();
 
-  if (!client) {
-    client = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY ?? "", {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER ?? "us3",
-      authEndpoint: "/api/realtime/auth"
-    });
+function startSource() {
+  if (source || typeof window === "undefined") return;
+
+  source = new EventSource("/api/realtime/events");
+
+  source.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data) as RealtimeEvent;
+      listeners.forEach((listener) => listener(data));
+    } catch (error) {
+      console.error("Failed to parse realtime payload", error);
+    }
+  };
+
+  source.onerror = () => {
+    source?.close();
+    source = null;
+    if (listeners.size > 0) {
+      setTimeout(startSource, 2000);
+    }
+  };
+}
+
+export function subscribeToRealtime(listener: Listener) {
+  if (typeof window === "undefined") {
+    return () => undefined;
   }
 
-  return client;
+  listeners.add(listener);
+  startSource();
+
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0 && source) {
+      source.close();
+      source = null;
+    }
+  };
 }
