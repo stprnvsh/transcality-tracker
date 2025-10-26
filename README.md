@@ -53,6 +53,9 @@ Developer-first ticket management platform bringing GitHub PRs, Jira issues, rea
    npm run dev
    ```
 
+   > Tip: OAuth credentials unlock user accounts and integrations, but they're not required for capturing work. Anonymous
+   > submissions can raise tickets with optional contact details and you can link GitHub or Jira later from the ticket detail view.
+
 ## Feature Tour
 
 | Area | Highlights |
@@ -63,6 +66,7 @@ Developer-first ticket management platform bringing GitHub PRs, Jira issues, rea
 | Files | Drag-and-drop uploader writing to `public/uploads` and persisting in Prisma |
 | Admin settings | JSON export/import + toggle UI for field governance |
 | Realtime | Server-sent events bridge protected by NextAuth session cookies |
+| Guest submissions | Anonymous ticket intake with optional contact details—link GitHub/Jira later when ready |
 
 ## Repo Layout
 

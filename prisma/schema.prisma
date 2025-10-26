@@ -38,16 +38,18 @@ model User {
 }
 
 model Ticket {
-  id           String         @id @default(cuid())
-  type         TicketType
-  title        String
-  description  String
-  status       TicketStatus   @default(backlog)
-  priority     String         @default("medium")
-  severity     String         @default("minor")
-  fields       Json
-  createdBy    User           @relation("TicketCreatedBy", fields: [createdById], references: [id])
-  createdById  String
+  id            String         @id @default(cuid())
+  type          TicketType
+  title         String
+  description   String
+  status        TicketStatus   @default(backlog)
+  priority      String         @default("medium")
+  severity      String         @default("minor")
+  fields        Json
+  reporterName  String?
+  reporterEmail String?
+  createdBy     User?          @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  createdById   String?
   assignedTo   User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
   assignedToId String?
   comments     Comment[]
@@ -60,15 +62,15 @@ model Ticket {
 }
 
 model TicketHistory {
-  id          String   @id @default(cuid())
-  ticket      Ticket   @relation(fields: [ticketId], references: [id])
-  ticketId    String
+  id           String   @id @default(cuid())
+  ticket       Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId     String
   fieldChanged String
   oldValue     String?
   newValue     String?
-  changedBy    User     @relation(fields: [changedById], references: [id])
-  changedById String
-  createdAt   DateTime @default(now())
+  changedBy    User?    @relation(fields: [changedById], references: [id])
+  changedById  String?
+  createdAt    DateTime @default(now())
 }
 
 model Comment {

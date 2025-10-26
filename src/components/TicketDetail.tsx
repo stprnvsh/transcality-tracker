@@ -9,7 +9,7 @@ import { TicketTypeBadge } from "./TicketTypeBadge";
 
 interface TicketDetailProps {
   ticket: Ticket & {
-    createdBy: User;
+    createdBy: User | null;
     assignedTo: User | null;
     comments: Array<Comment & { user: User }>;
     attachments: Attachment[];
@@ -38,10 +38,22 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
           <StatusWorkflow ticket={localTicket} />
         </header>
         <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <TicketMeta label="Owner" value={localTicket.createdBy.name ?? localTicket.createdBy.email} />
+          <TicketMeta
+            label="Owner"
+            value={
+              localTicket.createdBy?.name ??
+              localTicket.createdBy?.email ??
+              localTicket.reporterName ??
+              localTicket.reporterEmail ??
+              "Guest submission"
+            }
+          />
           <TicketMeta label="Assignee" value={localTicket.assignedTo?.name ?? "Unassigned"} />
           <TicketMeta label="Priority" value={localTicket.priority} />
           <TicketMeta label="Severity" value={localTicket.severity} />
+          {localTicket.reporterEmail && (
+            <TicketMeta label="Reporter Email" value={localTicket.reporterEmail} />
+          )}
         </dl>
       </section>
 
@@ -76,11 +88,11 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
   );
 }
 
-function TicketMeta({ label, value }: { label: string; value: string }) {
+function TicketMeta({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200">
       <dt className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</dt>
-      <dd className="mt-2 text-base font-medium text-slate-900 dark:text-white">{value}</dd>
+      <dd className="mt-2 text-base font-medium text-slate-900 dark:text-white">{value ?? "—"}</dd>
     </div>
   );
 }

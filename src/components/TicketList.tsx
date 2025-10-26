@@ -57,6 +57,11 @@ export async function TicketList({ variant = "default", filters }: TicketListPro
                       <span className="truncate text-blue-500">PR #{ticket.githubLinks[0].pullNumber}</span>
                     )}
                     {ticket.jiraLinks[0] && <span className="truncate text-amber-500">{ticket.jiraLinks[0].jiraKey}</span>}
+                    {!ticket.createdBy && (ticket.reporterName || ticket.reporterEmail) && (
+                      <span className="truncate text-slate-400">
+                        Reporter: {ticket.reporterName ?? ticket.reporterEmail}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Td>

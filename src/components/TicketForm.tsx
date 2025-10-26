@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import clsx from "clsx";
+import { useSession } from "next-auth/react";
 
 type TicketType = "feature" | "bug";
 type TicketStatus = "backlog" | "in_progress" | "in_review" | "blocked" | "done";
@@ -36,11 +37,15 @@ interface TicketFormState {
   priority: "low" | "medium" | "high" | "critical";
   severity: "minor" | "major" | "critical";
   status: TicketStatus;
+  reporterName: string;
+  reporterEmail: string;
+  assignedToId: string | null;
   fields: Record<string, string>;
 }
 
 export function TicketForm() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [type, setType] = useState<TicketType>("feature");
   const [configs, setConfigs] = useState<FieldConfig[]>([]);
   const [state, setState] = useState<TicketFormState>({
@@ -50,6 +55,9 @@ export function TicketForm() {
     priority: "medium",
     severity: "minor",
     status: "backlog",
+    reporterName: "",
+    reporterEmail: "",
+    assignedToId: null,
     fields: {}
   });
   const [isPending, startTransition] = useTransition();
@@ -77,10 +85,19 @@ export function TicketForm() {
 
     startTransition(async () => {
       try {
+        const reporterName = state.reporterName.trim();
+        const reporterEmail = state.reporterEmail.trim();
+        const payload = {
+          ...state,
+          type,
+          assignedToId: state.assignedToId,
+          reporterName: reporterName.length > 0 ? reporterName : undefined,
+          reporterEmail: reporterEmail.length > 0 ? reporterEmail : undefined
+        };
         const response = await fetch("/api/tickets", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...state, type })
+          body: JSON.stringify(payload)
         });
         if (!response.ok) {
           throw new Error("Failed to create ticket");
@@ -176,6 +193,29 @@ export function TicketForm() {
           required
         />
       </label>
+      {!session && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="text-xs uppercase tracking-wide text-slate-500">Your Name (optional)</span>
+            <input
+              value={state.reporterName}
+              onChange={(event) => setState((prev) => ({ ...prev, reporterName: event.target.value }))}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 shadow-sm focus:border-brand focus:ring-brand dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              placeholder="How should we refer to you?"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="text-xs uppercase tracking-wide text-slate-500">Contact Email (optional)</span>
+            <input
+              type="email"
+              value={state.reporterEmail}
+              onChange={(event) => setState((prev) => ({ ...prev, reporterEmail: event.target.value }))}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 shadow-sm focus:border-brand focus:ring-brand dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              placeholder="We'll reach out here if we have questions"
+            />
+          </label>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         {activeConfigs
           .filter((config) => config.isVisible)
@@ -203,6 +243,9 @@ export function TicketForm() {
       >
         Create ticket
       </button>
+      <p className="text-xs text-slate-500">
+        GitHub and Jira links are totally optional—you can attach them later from the ticket detail view.
+      </p>
     </form>
   );
 }

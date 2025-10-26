@@ -13,7 +13,9 @@ export const ticketSchema = z.object({
   status: z.nativeEnum(TicketStatus),
   priority: z.enum(["low", "medium", "high", "critical"]),
   severity: z.enum(["minor", "major", "critical"]),
-  assignedToId: z.string().nullable(),
+  assignedToId: z.string().nullable().optional(),
+  reporterName: z.string().trim().min(1).max(120).optional().nullable(),
+  reporterEmail: z.string().trim().email().optional().nullable(),
   fields: z.record(z.any()).default({})
 });
 
@@ -68,9 +70,6 @@ export async function getTicketById(id: string) {
 
 export async function createTicket(payload: TicketInput) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
   const data = ticketSchema.parse(payload);
 
   const ticket = await prisma.ticket.create({
@@ -81,8 +80,10 @@ export async function createTicket(payload: TicketInput) {
       status: data.status,
       priority: data.priority,
       severity: data.severity,
-      createdById: session.user.id,
-      assignedToId: data.assignedToId,
+      createdById: session?.user?.id,
+      assignedToId: data.assignedToId ?? null,
+      reporterName: data.reporterName,
+      reporterEmail: data.reporterEmail,
       fields: data.fields
     }
   });
@@ -93,7 +94,7 @@ export async function createTicket(payload: TicketInput) {
       fieldChanged: "status",
       oldValue: null,
       newValue: ticket.status,
-      changedById: session.user.id
+      changedById: session?.user?.id ?? null
     }
   });
 
@@ -157,8 +158,16 @@ export async function deleteTicket(id: string) {
   });
 }
 
-async function logHistoryChanges(before: any, after: any, userId: string) {
-  const fields: Array<keyof typeof before> = ["status", "priority", "severity", "assignedToId", "title"];
+async function logHistoryChanges(before: any, after: any, userId?: string) {
+  const fields: Array<keyof typeof before> = [
+    "status",
+    "priority",
+    "severity",
+    "assignedToId",
+    "title",
+    "reporterName",
+    "reporterEmail"
+  ];
   const changes = fields
     .map((field) => {
       if (before[field] !== after[field]) {
@@ -180,7 +189,7 @@ async function logHistoryChanges(before: any, after: any, userId: string) {
       fieldChanged: change!.fieldChanged,
       oldValue: change!.oldValue,
       newValue: change!.newValue,
-      changedById: userId
+      changedById: userId ?? null
     }))
   });
 }
